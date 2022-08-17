@@ -1,0 +1,92 @@
+pipeline{
+
+agent any
+
+tools{
+maven 'maven3.8.4'
+}
+
+triggers {
+  pollSCM '* * * * *'
+}
+
+options {
+  buildDiscarder logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '5') //Discard old builds
+  timestamps()   //Add Time Spamp to Console output
+}
+
+
+ stages{
+ 
+  stage('CheckOutCode'){
+   steps{
+    git branch: 'development', credentialsId: '9de00cc6-fa9e-4070-9c53-12d90d9ac130', 
+url: 'https://github.com/samuel-ec-apps/maven-web-application-dayatech.git'
+   }
+  }
+  
+  stage('Build'){
+   steps{
+    sh "mvn clean package"
+   }
+  }
+  
+  //This Stage will execute the sonarqube Report
+  stage('SonarQubeReport'){
+   steps{
+    sh "mvn sonar:sonar"
+   }
+  }
+  
+  //This Stage will Upload the Artifact into Nexus Repository
+  stage('UploadArtifactsIntoNexus'){
+   steps{
+    sh "mvn deploy"
+   }
+  }
+  
+  //This Stage will Deploy the Application into Tomcat Server
+  stage('DeployApplicationIntoTomcatServer'){
+   steps{
+    sshagent(['4929ce2a-d1f1-43ce-8f46-38b75754bd10']) {
+     sh "scp -o StrictHostKeyChecking=no target/maven-web-application.war ec2-user@13.232.229.20:/opt/apache-tomcat-9.0.65/webapps/"
+	}
+   }
+  }
+  
+
+}//Stages Closing
+
+post {
+  always {
+    emailext body: '''The Build was Over.
+
+	Regards,
+	DayaTech''', subject: 'Build Successfull', to: 'samuel.polagani@gmail.com'
+  }
+  aborted {
+    emailext body: '''The Build was Aborted.
+
+	Regards,
+	DayaTech''', subject: 'Build Aborted', to: 'samuel.polagani@gmail.com'
+  }
+  success {
+    emailext body: '''The Build was Successful.
+
+	Regards,
+	DayaTech''', subject: 'Build Successfull', to: 'samuel.polagani@gmail.com'
+  }
+  failure {
+    emailext body: '''The Build was Failed.
+
+	Regards,
+	DayaTech''', subject: 'Build Failed', to: 'samuel.polagani@gmail.com'
+  }
+}
+
+
+}//PipelineClosing
+
+
+
+
