@@ -10,7 +10,7 @@ url: 'https://github.com/samuel-ec-apps/maven-web-application-dayatech.git'
 stage('Build'){
 sh "${mavenHome}/bin/mvn clean package"
 }
-
+/*
 stage('ExecuteSonarQubeReport'){
 sh "${mavenHome}/bin/mvn clean sonar:sonar"
 }
@@ -31,7 +31,7 @@ emailext body: '''The Build was Successful.
 Regards,
 DayaTech''', subject: 'Build Successfull', to: 'samuel.polagani@gmail.com'
 }
-
+*/
 
 
 }
